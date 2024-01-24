@@ -1,0 +1,6 @@
+version: "3"
+services:    
+    focus1:        
+        image: larrytao100/focus          
+        ports: 
+            - "8000:8000" 

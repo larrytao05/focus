@@ -9,6 +9,7 @@ class User(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String, nullable=False)
+    password = db.Column(db.String, nullable=False)
     pfp = db.Column(db.String, nullable=False)
     lvl = db.Column(db.Integer, nullable=False)
     skin = db.Column(db.String, nullable=False)
@@ -20,6 +21,7 @@ class User(db.Model):
         Initialize a User
         """
         self.username = kwargs.get("username", "")
+        self.password = kwargs.get("password", "")
         self.pfp = kwargs.get("pfp", "")
         self.lvl = 0
         self.skin = kwargs.get("skin", "default")
@@ -32,7 +34,7 @@ class User(db.Model):
             "id": self.id,
             "username": self.username,
             "pfp": self.pfp,
-            "total_time": self.total_time,
+            "time": self.total_time,
             "lvl": self.lvl,
             "skin": self.skin,
             "sessions": [session.serialize() for session in self.sessions]
@@ -68,6 +70,7 @@ class Session(db.Model):
             "id": self.id,
             "start": self.start,
             "active": self.active,
-            "time_elapsed": self.time_elapsed
+            "timeElapsed": self.time_elapsed,
+            "user": self.user_id
         }
 
