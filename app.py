@@ -70,13 +70,13 @@ def get_user(user_id):
     return success_response(user.serialize())
 
 @app.route("/api/users/login/username/", methods=["GET"])
-def login():
+def login(username):
     """
     Endpoint for verifying login
     """
     body = json.loads(request.data)
-    user = User.query.filter_by(username=body.get("username"), password=body.get("password")).first()
-    if user is None:
+    user = User.query.filter_by(username=username).first()
+    if user is None or body.get("password") != user.password:
         return failure_response("Login failed")
     return success_response(user.serialize())
 
