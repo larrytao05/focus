@@ -38,19 +38,19 @@ def get_all_users():
     users = [user.serialize() for user in User.query.all()]
     return success_response({"users":users})
     
-@app.route("/api/users/", methods=["POST"])
-def create_user():
+@app.route("/api/users/<String:username>/", methods=["POST"])
+def create_user(username):
     """
     Endpoint for creating a user
     """
     body = json.loads(request.data)
-    user = User.query.filter_by(username=body.get("username")).first()
+    user = User.query.filter_by(username=username).first()
     if user is not None:
         return failure_response("A user with this username already exists")
-    if body.get("username") is None or body.get("password") is None:
+    if username is None or body.get("password") is None:
         return failure_response("Username or password not provided")
     new_user = User(
-        username=body.get("username"),
+        username=username,
         pfp=body.get("pfp"),
         skin=body.get("skin"),
         password=body.get("password")
@@ -69,14 +69,14 @@ def get_user(user_id):
         return failure_response("User not found")
     return success_response(user.serialize())
 
-@app.route("/api/users/login/", methods=["GET"])
-def login():
+@app.route("/api/users/login/username/", methods=["GET"])
+def login(username):
     """
     Endpoint for verifying login
     """
     body = json.loads(request.data)
-    user = User.query.filter_by(username=body.get("username"), password=body.get("password")).first()
-    if user is None:
+    user = User.query.filter_by(username=username).first()
+    if user is None or body.get("password") != user.password:
         return failure_response("Login failed")
     return success_response(user.serialize())
 
