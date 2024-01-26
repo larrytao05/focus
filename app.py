@@ -2,8 +2,7 @@ import os
 from db import db
 from flask import Flask, request
 import json
-from db import User
-from db import Session
+from db import *
 from datetime import datetime, timezone
 
 """
@@ -38,7 +37,7 @@ def get_all_users():
     users = [user.serialize() for user in User.query.all()]
     return success_response({"users":users})
     
-@app.route("/api/users/<String:username>/", methods=["POST"])
+@app.route("/api/users/<string:username>/", methods=["POST"])
 def create_user(username):
     """
     Endpoint for creating a user
@@ -69,15 +68,23 @@ def get_user(user_id):
         return failure_response("User not found")
     return success_response(user.serialize())
 
-@app.route("/api/users/login/username/", methods=["GET"])
-def login(username):
+@app.route("/app/users/<int:user_id>/friends/", methods=["GET"])
+def get_friends(user_id):
+    """
+    Endpoint for getting a user's friends
+    """
+
+
+@app.route("/api/users/login/<string:username>/<string:password>/", methods=["GET"])
+def login(username, password):
     """
     Endpoint for verifying login
     """
-    body = json.loads(request.data)
     user = User.query.filter_by(username=username).first()
-    if user is None or body.get("password") != user.password:
-        return failure_response("Login failed")
+    if user is None:
+        return failure_response("user does not exist")
+    if password != user.password:
+        return failure_response("Invalid password")
     return success_response(user.serialize())
 
 @app.route("/api/users/<int:user_id>/", methods=["DELETE"])
@@ -143,6 +150,47 @@ def cancel_session(user_id):
     db.session.delete(session)
     db.session.commit()
     return success_response(session.serialize())
+
+@app.route("/api/users/friends/<string:username1>/<string:username2>/", methods=["POST"])
+def add_friend(username1, username2):
+    """
+    Endpoint for adding a friend
+    """
+    user1 = User.query.filter_by(username=username1).first()
+    user2 = User.query.filter_by(username=username2).first()
+    if user1 is None or user2 is None:
+        return failure_response("Invalid user ids")
+    if user2 in user1.friends:
+        return failure_response("Users are already friends")
+    request = Request(
+        sender_id=user1.id,
+        receiver_id=user2.id,
+        accepted=False
+    )
+    db.session.add(request)
+    db.session.commit()
+    return success_response(user1.serialize())
+    
+@app.route("/api/users/friends/<string:username1>/<string:username2>/", methods=["PUT"])
+def accept_request(username1, username2):
+    """
+    Endpoint for accepting a friend request
+    Make sure receiver id comes first
+    """
+    user1 = User.query.filter_by(username=username1).first()
+    user2 = User.query.filter_by(username=username2).first()
+    if user1 is None or user2 is None:
+        return failure_response("Invalid user ids")
+    if user2 in user1.friends:
+        return failure_response("Users are already friends")
+    request = Request.query.filter_by(receiver_id=user1.id, sender_id=user2.id).first()
+    if request is None:
+        return failure_response("Friend request not found")
+    user1.friends.append(user2)
+    user2.friends.append(user1)
+    db.session.delete(request)
+    db.session.commit()
+    return success_response(user1.serialize())
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
